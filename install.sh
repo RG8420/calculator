@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # install.sh
 # Installs the 'calculator' command on Linux.
 #
@@ -19,7 +19,7 @@ set -eo pipefail
 REPO_URL="https://github.com/RG8420/calculator.git"
 INSTALL_DIR="$HOME/.local/bin"
 SYSTEM_INSTALL_DIR="/usr/local/bin"
-VENV_DIR="$HOME/.calculator-venv"
+BUILD_DIR="$HOME/.calculator-build"
 
 usage() {
     echo "Usage: install.sh [--uninstall]"
@@ -41,9 +41,9 @@ uninstall_calculator() {
         fi
     done
 
-    if [ -d "$VENV_DIR" ]; then
-        rm -rf "$VENV_DIR"
-        echo "  Removed virtual environment"
+    if [ -d "$BUILD_DIR" ]; then
+        rm -rf "$BUILD_DIR"
+        echo "  Removed build directory"
         removed=1
     fi
 
@@ -64,11 +64,11 @@ if [[ "${1:-}" == "-h" ]] || [[ "${1:-}" == "--help" ]]; then
     usage
 fi
 
-echo "=== Calculator Installer ==="
+echo "=== Calculator Installer (C Version) ==="
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-if [[ "$SCRIPT_DIR" == *"/tmp"* ]] || [[ ! -d "$SCRIPT_DIR/calculator" ]]; then
+if [[ "$SCRIPT_DIR" == *"/tmp"* ]] || [[ ! -f "$SCRIPT_DIR/Makefile" ]]; then
     echo "[*] Detected run from curl/download - cloning repository..."
     TEMP_DIR=$(mktemp -d)
     git clone --depth 1 "$REPO_URL" "$TEMP_DIR"
@@ -79,52 +79,50 @@ else
     CLEANUP_TEMP=0
 fi
 
-PYTHON="$VENV_DIR/bin/python"
-if [ ! -f "$PYTHON" ]; then
-    echo "[1/4] Creating virtual environment..."
-    python3 -m venv "$VENV_DIR"
-else
-    echo "[1/4] Virtual environment already exists — skipping."
+echo "[1/3] Building calculator..."
+cd "$SCRIPT_DIR"
+
+if ! command -v gcc &> /dev/null; then
+    echo "  Error: GCC not found. Please install GCC."
+    exit 1
 fi
 
-echo "[2/4] Installing calculator package..."
-"$VENV_DIR/bin/pip" install --upgrade pip setuptools wheel --quiet 2>/dev/null || true
-"$VENV_DIR/bin/pip" install -e "$SCRIPT_DIR" --quiet 2>/dev/null || true
+rm -rf "$BUILD_DIR" && mkdir -p "$BUILD_DIR"
+cd "$BUILD_DIR"
+cp -r "$SCRIPT_DIR/src" "$BUILD_DIR/"
+cp "$SCRIPT_DIR/Makefile" "$BUILD_DIR/"
 
-echo "[3/4] Creating launcher script..."
+make
+
+echo "[2/3] Installing calculator..."
 
 if [ -w "$SYSTEM_INSTALL_DIR" ]; then
+    cp calculator "$SYSTEM_INSTALL_DIR/calculator"
+    chmod +x "$SYSTEM_INSTALL_DIR/calculator"
+    echo "  Installed to $SYSTEM_INSTALL_DIR (system-wide)"
     INSTALL_TARGET="$SYSTEM_INSTALL_DIR/calculator"
-    echo "  Installing to $SYSTEM_INSTALL_DIR (system-wide)"
 else
-    INSTALL_TARGET="$INSTALL_DIR/calculator"
-    echo "  Installing to $INSTALL_DIR (user-level)"
-
     if [ ! -d "$INSTALL_DIR" ]; then
         mkdir -p "$INSTALL_DIR"
     fi
+    cp calculator "$INSTALL_DIR/calculator"
+    chmod +x "$INSTALL_DIR/calculator"
+    echo "  Installed to $INSTALL_DIR (user-level)"
+    INSTALL_TARGET="$INSTALL_DIR/calculator"
 fi
 
-cat > "$INSTALL_TARGET" <<EOF
-#!/usr/bin/env bash
-cd /tmp
-exec "$PYTHON" -m calculator.repl "\$@"
-EOF
-chmod +x "$INSTALL_TARGET"
-
-echo "[4/4] Configuring PATH..."
+echo "[3/3] Configuring PATH..."
 
 SHELL_RC="$HOME/.bashrc"
 if [ -n "${ZSH_VERSION:-}" ]; then
     SHELL_RC="$HOME/.zshrc"
 fi
 
-PATH_LINE="export PATH=\"$INSTALL_DIR:\$PATH\""
 if [[ "$INSTALL_TARGET" == *"$INSTALL_DIR"* ]]; then
     if ! grep -q "$INSTALL_DIR" "$SHELL_RC" 2>/dev/null; then
         echo "" >> "$SHELL_RC"
         echo "# Calculator command" >> "$SHELL_RC"
-        echo "$PATH_LINE" >> "$SHELL_RC"
+        echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> "$SHELL_RC"
         echo "  Added $INSTALL_DIR to PATH in $SHELL_RC"
         echo "  Please restart your terminal or run: source $SHELL_RC"
     fi
