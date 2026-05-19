@@ -2,32 +2,26 @@ CC = gcc
 CFLAGS = -Wall -Wextra -O2 -std=c99
 LDFLAGS = -lm
 
-SRC_DIR = src
-BUILD_DIR = build
-BIN_DIR = build
-
-SOURCES = $(SRC_DIR)/main.c $(SRC_DIR)/calculator.c $(SRC_DIR)/operations.c
-OBJECTS = $(SOURCES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
-TARGET = $(BIN_DIR)/calculator
+SOURCES = main.c calculator.c operations.c
+OBJECTS = $(SOURCES:.c=.o)
+TARGET = calculator
 
 PREFIX ?= /usr/local
 INSTALL_BIN = $(PREFIX)/bin
 
-.PHONY: all clean install uninstall test
+.PHONY: all clean install uninstall test help
 
 all: $(TARGET)
 
 $(TARGET): $(OBJECTS)
-	@mkdir -p $(BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 	@echo "Build complete: $(TARGET)"
 
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
-	@mkdir -p $(BUILD_DIR)
+%.o: src/%.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
-	rm -rf $(BUILD_DIR)
+	rm -f $(OBJECTS) $(TARGET)
 	@echo "Clean complete"
 
 install: $(TARGET)

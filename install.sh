@@ -87,16 +87,12 @@ if ! command -v gcc &> /dev/null; then
     exit 1
 fi
 
-rm -rf "$BUILD_DIR" && mkdir -p "$BUILD_DIR"
-cd "$BUILD_DIR"
-cp -r "$SCRIPT_DIR/src" "$BUILD_DIR/"
-cp "$SCRIPT_DIR/Makefile" "$BUILD_DIR/"
-
+make clean 2>/dev/null || true
 make
 
 echo "[2/3] Installing calculator..."
 
-CALCULATOR_BIN="$BUILD_DIR/calculator"
+CALCULATOR_BIN="$SCRIPT_DIR/calculator"
 
 if [ -w "$SYSTEM_INSTALL_DIR" ]; then
     cp "$CALCULATOR_BIN" "$SYSTEM_INSTALL_DIR/calculator"
