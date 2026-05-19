@@ -14,7 +14,7 @@
 # Options:
 #   --uninstall  Remove the calculator command
 
-set -euo pipefail
+set -eo pipefail
 
 REPO_URL="https://github.com/RG8420/calculator.git"
 INSTALL_DIR="$HOME/.local/bin"
