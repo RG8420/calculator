@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "calculator"
+version = "0.1.0"
+description = "A simple modularized calculator package."
+requires-python = ">=3.9"
+
+[project.scripts]
+calculator-cli = "calculator.cli:main"
+calculator-repl = "calculator.repl:main"
