@@ -96,8 +96,10 @@ make
 
 echo "[2/3] Installing calculator..."
 
+CALCULATOR_BIN="$BUILD_DIR/calculator"
+
 if [ -w "$SYSTEM_INSTALL_DIR" ]; then
-    cp calculator "$SYSTEM_INSTALL_DIR/calculator"
+    cp "$CALCULATOR_BIN" "$SYSTEM_INSTALL_DIR/calculator"
     chmod +x "$SYSTEM_INSTALL_DIR/calculator"
     echo "  Installed to $SYSTEM_INSTALL_DIR (system-wide)"
     INSTALL_TARGET="$SYSTEM_INSTALL_DIR/calculator"
@@ -105,7 +107,7 @@ else
     if [ ! -d "$INSTALL_DIR" ]; then
         mkdir -p "$INSTALL_DIR"
     fi
-    cp calculator "$INSTALL_DIR/calculator"
+    cp "$CALCULATOR_BIN" "$INSTALL_DIR/calculator"
     chmod +x "$INSTALL_DIR/calculator"
     echo "  Installed to $INSTALL_DIR (user-level)"
     INSTALL_TARGET="$INSTALL_DIR/calculator"
